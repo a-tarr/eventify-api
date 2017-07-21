@@ -23,7 +23,12 @@ class App {
 
   private routes(): void {
     let router = express.Router();
-    
+    router.get('/', (req, res, next) => { 
+      res.json({ 
+        message: 'Hello World!' 
+      }); 
+    }); 
+    this.express.use('/', router); 
     this.express.use('/api/barcodes', BarcodeRouter);
     this.express.use('/api/ocr', OcrRouter);
 
