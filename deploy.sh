@@ -113,8 +113,9 @@ selectNodeVersion
 if [ -e "$DEPLOYMENT_TARGET/package.json" ]; then
   cd "$DEPLOYMENT_TARGET"
   eval $NPM_CMD install
-  eval $NPM_CMD scripts
-  exitWithMessageOnError "npm failed"
+  exitWithMessageOnError "npm install failed"
+  eval $NPM_CMD run scripts
+  exitWithMessageOnError "npm scripts failed"
   cd - > /dev/null
 fi
 
