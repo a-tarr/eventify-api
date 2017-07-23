@@ -27,6 +27,7 @@ export function scrapePins(sites): Promise<void> {
 
 			console.log('Rename finished');
 
+			let totalImagesParsed = 0;
 			for (let i = 0; i < fileNames.length; i++) {
 				Jimp.read(`./barcodes/barcode${i}.gif`, function (err, img) {
 					img.rotate(90)
@@ -34,9 +35,12 @@ export function scrapePins(sites): Promise<void> {
 						.write(`./barcodes/barcode${i}.png`);
 					console.log(`rotated ${i}, deleting related gif`);
 					fs.unlinkSync(`./barcodes/barcode${i}.gif`)
+					totalImagesParsed++;
+					if (totalImagesParsed === fileNames.length) {
+						resolve();
+					}
 				});
 			}
-			resolve();
 		})
 	})
 }
