@@ -19,19 +19,6 @@ export class OcrRouter {
     let filenames = fs.readdirSync('./barcodes/')
 		let response = await getPins(filenames);
 		res.json(response);
-		// filenames.forEach(filename => {
-		// 	Tesseract.recognize(`./barcodes/${filename}`)
-		// 		.progress(function  (p) { console.log('progress', p)  })
-		// 		.catch(err => console.error(err))
-		// 		.then(function (result) {
-		// 			let trimmed = result.text.trim();
-		// 			response.push(trimmed.substring(trimmed.length - 4));
-		// 			if (response.length === filenames.length) {
-		// 				console.log(response);
-		// 				res.json(response);
-		// 			}
-		// 		});
-		// });
   }
 }
 
