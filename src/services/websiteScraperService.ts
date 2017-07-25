@@ -1,47 +1,49 @@
 import { TIMEOUT } from 'dns';
 import * as scrape from 'website-scraper';
 import * as rimraf from 'rimraf';
-import * as fs from 'fs';
+import * as fs from 'fs-extra';
 import * as Jimp from 'jimp';
 import * as osmosis from 'osmosis';
 
-export function scrapePins(sites): Promise<void> {
+export function scrapePins(sites: Array<string>): Promise<void> {
 	rimraf.sync('./barcodes/');
-	return new Promise<void>(resolve => {
-		scrape({
-			urls: sites,
-			directory: './barcodes/',
-			sources: [
-				{selector: 'img', attr: 'src'}
-			]
-		}).then(() => {
-			console.log('Scraping finished, deleting un-needed');
-			rimraf.sync('./barcodes/images');
-			rimraf.sync('./barcodes/*.html');
+	return new Promise<void>(async resolve => {
+		for (let i in sites) {
+			await scrapeFullWebsite(sites[i], i);
+		}
 
-			let fileNames = fs.readdirSync('./barcodes/');
+		for (let i in sites) {
+			fs.copySync(`./barcodes/${i}`, './barcodes', { overwrite: true });
+			rimraf.sync(`./barcodes/${i}`);
+		}
 
-			for (var index in fileNames) {
-				fs.renameSync(`./barcodes/${fileNames[index]}`, `./barcodes/barcode${index}.gif`);
-			}
+		rimraf.sync('./barcodes/images');
+		rimraf.sync('./barcodes/*.html');
 
-			console.log('Rename finished');
+		let filenames = fs.readdirSync('./barcodes/');
+		filenames.sort(function(a, b) {
+			return fs.statSync('./barcodes/' + a).mtime.getTime() - 
+						fs.statSync('./barcodes/' + b).mtime.getTime();
+		});
 
-			let totalImagesParsed = 0;
-			for (let i = 0; i < fileNames.length; i++) {
-				Jimp.read(`./barcodes/barcode${i}.gif`, function (err, img) {
-					img.rotate(90)
-						.scale(3)
-						.write(`./barcodes/barcode${i}.png`);
-					console.log(`rotated ${i}, deleting related gif`);
-					fs.unlinkSync(`./barcodes/barcode${i}.gif`)
-					totalImagesParsed++;
-					if (totalImagesParsed === fileNames.length) {
-						resolve();
-					}
-				});
-			}
-		})
+		for (let index in filenames) {
+			fs.renameSync(`./barcodes/${filenames[index]}`, `./barcodes/barcode${index}.gif`);
+		}
+
+		let totalImagesParsed = 0;
+		for (let i = 0; i < filenames.length; i++) {
+			Jimp.read(`./barcodes/barcode${i}.gif`, function (err, img) {
+				img.rotate(90)
+					.scale(3)
+					.write(`./barcodes/barcode${i}.png`);
+				console.log(`rotated ${i}, deleting related gif`);
+				fs.unlinkSync(`./barcodes/barcode${i}.gif`)
+				totalImagesParsed++;
+				if (totalImagesParsed === filenames.length) {
+					resolve();
+				}
+			});
+		}
 	})
 }
 
@@ -55,7 +57,21 @@ export function scrapeBarcodes(sites): Promise<Array<string>> {
 				resolve(result);
 			}
 		}
-	})
+	});
+}
+
+function scrapeFullWebsite(site, iteration): Promise<void> {
+	return new Promise<void>(resolve => {
+		scrape({
+			urls: site,
+			directory: `./barcodes/${iteration}`,
+			sources: [
+				{selector: 'img', attr: 'src'}
+			]
+		}, (error, result) => {
+			resolve();
+		});
+	});
 }
 
 function scrapeWebsite(site): Promise<string> {

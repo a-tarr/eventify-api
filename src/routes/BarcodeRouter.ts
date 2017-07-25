@@ -19,8 +19,8 @@ export class BarcodeRouter {
     res.json(result);
   }
 
-  public async parseAllPins(req: Request, res: Response, next: NextFunction) {
-    let barcodes = req.body.barcodes;
+  public async parseAllPins(req: Request, res: Response) {
+    let barcodes: Array<string> = req.body.barcodes;
     await scrapePins(barcodes);
     res.json("Barcode image parsing complete!");
   }
