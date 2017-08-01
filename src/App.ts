@@ -1,5 +1,6 @@
 import OcrRouter from './routes/OcrRouter';
 import BarcodeRouter from './routes/BarcodeRouter';
+import BarcodeAndPinRouter from './routes/BarcodeAndPinRouter';
 import * as path from 'path';
 import * as express from 'express';
 import * as logger from 'morgan';
@@ -31,7 +32,7 @@ class App {
     this.express.use('/', router); 
     this.express.use('/api/barcodes', BarcodeRouter);
     this.express.use('/api/ocr', OcrRouter);
-
+    this.express.use('/api/barcodes-and-pins', BarcodeAndPinRouter);
   }
 }
 

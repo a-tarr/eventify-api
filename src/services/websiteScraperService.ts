@@ -5,59 +5,63 @@ import * as fs from 'fs-extra';
 import * as Jimp from 'jimp';
 import * as osmosis from 'osmosis';
 
+// Gets the barcode number
+export function scrapeBarcodes(sites): Promise<Array<string>> {
+	let result = [];
+	return new Promise<Array<string>>(async resolve => {
+		let actions = sites.map(scrapeWebsite);
+		Promise.all<any, Array<string>>(actions).then(data => {
+			resolve(data);
+		})
+	});
+}
+
+// Grabs the image from the website and processes it into PNG.
+// This is necessary as we can't directly grab the image
 export function scrapePins(sites: Array<string>): Promise<void> {
 	rimraf.sync('./barcodes/');
 	return new Promise<void>(async resolve => {
-		for (let i in sites) {
-			await scrapeFullWebsite(sites[i], i);
-		}
-
-		for (let i in sites) {
-			fs.copySync(`./barcodes/${i}`, './barcodes', { overwrite: true });
-			rimraf.sync(`./barcodes/${i}`);
-		}
-
-		rimraf.sync('./barcodes/images');
-		rimraf.sync('./barcodes/*.html');
-
-		let filenames = fs.readdirSync('./barcodes/');
-		filenames.sort(function(a, b) {
-			return fs.statSync('./barcodes/' + a).mtime.getTime() - 
-						fs.statSync('./barcodes/' + b).mtime.getTime();
+		let j = -1;
+		let actions = sites.map((site) => {
+			j++;
+			return scrapeFullWebsite(site, j);
 		});
 
-		for (let index in filenames) {
-			fs.renameSync(`./barcodes/${filenames[index]}`, `./barcodes/barcode${index}.gif`);
-		}
-
-		let totalImagesParsed = 0;
-		for (let i = 0; i < filenames.length; i++) {
-			Jimp.read(`./barcodes/barcode${i}.gif`, function (err, img) {
-				img.rotate(90)
-					.scale(3)
-					.write(`./barcodes/barcode${i}.png`);
-				console.log(`rotated ${i}, deleting related gif`);
-				fs.unlinkSync(`./barcodes/barcode${i}.gif`)
-				totalImagesParsed++;
-				if (totalImagesParsed === filenames.length) {
-					resolve();
-				}
-			});
-		}
-	})
-}
-
-export function scrapeBarcodes(sites): Promise<Array<string>> {
-	let result = [];
-	osmosis.config('concurrency', 1);
-	return new Promise<Array<string>>(async resolve => {
-		for(let i = 0; i < sites.length; i++) {
-			result.push(await scrapeWebsite(sites[i]).then(result => {return result}));
-			if (result.length === sites.length) {
-				resolve(result);
+		Promise.all(actions).then(() => {
+			for (let i in sites) {
+				fs.copySync(`./barcodes/${i}`, './barcodes', { overwrite: true });
+				rimraf.sync(`./barcodes/${i}`);
 			}
-		}
-	});
+
+			rimraf.sync('./barcodes/images');
+			rimraf.sync('./barcodes/*.html');
+
+			let filenames = fs.readdirSync('./barcodes/');
+			filenames.sort(function (a, b) {
+				return fs.statSync('./barcodes/' + a).mtime.getTime() -
+					fs.statSync('./barcodes/' + b).mtime.getTime();
+			});
+
+			for (let index in filenames) {
+				fs.renameSync(`./barcodes/${filenames[index]}`, `./barcodes/barcode${index}.gif`);
+			}
+
+			let totalImagesParsed = 0;
+			for (let i = 0; i < filenames.length; i++) {
+				Jimp.read(`./barcodes/barcode${i}.gif`, function (err, img) {
+					img.rotate(90)
+						.scale(3)
+						.write(`./barcodes/barcode${i}.png`);
+					console.log(`rotated ${i}, deleting related gif`);
+					fs.unlinkSync(`./barcodes/barcode${i}.gif`)
+					totalImagesParsed++;
+					if (totalImagesParsed === filenames.length) {
+						resolve();
+					}
+				});
+			}
+		})
+		});	
 }
 
 function scrapeFullWebsite(site, iteration): Promise<void> {

@@ -3,13 +3,11 @@ var Tesseract = require('tesseract.js');
 export function getPins(filenames: Array<string>): Promise<Array<string>> {
   let result = [];
   return new Promise<Array<string>>(async resolve => {
-    for (let i = 0; i < filenames.length; i++) {
-      result.push(await ocrPin(filenames[i]));
-      if (result.length === filenames.length) {
-				resolve(result);
-			}
-    }
-  })
+    let actions = filenames.map(ocrPin);
+    Promise.all(actions).then(data => {
+      resolve(data);
+    });
+  });
 }
 
 function ocrPin(filename: string): Promise<string> {
