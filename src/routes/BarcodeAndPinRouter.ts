@@ -1,6 +1,7 @@
 import { scrapePins, scrapeBarcodes } from '../services/websiteScraperService';
 import { Router, Request, Response, NextFunction } from 'express';
 import { getPins } from '../services/ocrService';
+const fs = require("fs-extra");
 
 export class BarcodeAndPinRouter {
   router: Router
@@ -16,10 +17,23 @@ export class BarcodeAndPinRouter {
 
   public async getBarcodesAndPins(req: Request, res: Response) {
     let barcodes: Array<string> = req.body.barcodes;
-    await scrapePins(barcodes);
-    await scrapeBarcodes(barcodes);
-    await getPins(barcodes);
-    res.json("Barcode image parsing complete!");
+    const randomHash: string = `./barcodes/${Math.random().toString(36).substring(8)}`;
+    Promise.all([scrapePins(barcodes, randomHash), scrapeBarcodes(barcodes, randomHash)]).then(async data => {
+      let filenames = [];
+      for(let i in barcodes) {
+        filenames.push(`barcode${i}.png`)
+      };         
+      let pins = await getPins(filenames, randomHash);
+      let codes = data[1];
+      let objList = [];
+      for (let i = 0; i < barcodes.length; i++) {
+        let obj = {};
+        obj['barcode'] = codes[i];
+        obj['pin'] = pins[i];
+        objList.push(obj);
+      }
+      res.json(objList);
+    });
   }
 }
 
