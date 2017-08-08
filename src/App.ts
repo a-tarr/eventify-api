@@ -4,7 +4,11 @@ import BarcodeAndPinRouter from './routes/BarcodeAndPinRouter';
 import * as path from 'path';
 import * as express from 'express';
 import * as logger from 'morgan';
+import * as mongoose from 'mongoose';
+import * as passport from 'passport';
 import * as bodyParser from 'body-parser';
+import * as session from 'express-session';
+import * as flash from 'connect-flash';
 
 class App {
 
@@ -12,6 +16,7 @@ class App {
 
   constructor() {
     this.express = express();
+    mongoose.connect(configDB.url);
     this.middleware();
     this.routes();
   }
@@ -20,6 +25,10 @@ class App {
     this.express.use(logger('dev'));
     this.express.use(bodyParser.json());
     this.express.use(bodyParser.urlencoded({ extended: false }));
+    this.express.use(session({ secret: 'secretkey'}));
+    this.express.use(passport.initalize());
+    this.express.use(passport.session());
+    this.express.use(flash());
   }
 
   private routes(): void {
