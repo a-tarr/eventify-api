@@ -9,14 +9,18 @@ import * as passport from 'passport';
 import * as bodyParser from 'body-parser';
 import * as session from 'express-session';
 import * as flash from 'connect-flash';
+import DatabaseConfig from './config/config';
+import * as AuthenticationController from './routes/Authentication';
+const passportService = require('./config/passport');
 
 class App {
-
   public express: express.Application;
+  public database: DatabaseConfig;
 
   constructor() {
     this.express = express();
-    mongoose.connect(configDB.url);
+    this.database = new DatabaseConfig();
+    mongoose.connect(this.database.database);
     this.middleware();
     this.routes();
   }
